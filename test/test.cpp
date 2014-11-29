@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "planner.h"
+#include <src/planner.h>
 
 TEST(Planner, PlanOne) {
   Planner planner(2);

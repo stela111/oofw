@@ -5,13 +5,13 @@
 struct Steps {
 };
 
+/// Maximizes speed of moves given constraints
 class Planner {
  public:
+  /// Create a planner capable of planning queue_size moves ahead
   Planner(unsigned queue_size);
 
-  /**
-     Add a move to plan.
-   */
+  /// Add a move to plan.
   void plan_move(Steps steps,
 		 float max_change_speed_sqr,
 		 float nominal_speed_sqr,
@@ -22,9 +22,16 @@ class Planner {
     float entry_speed_sqr; // Planned entry speed (squared)
   };
 
+  // Check if no moves can be added
   bool check_full_buffer() const;
+
+  // Returns current move or nullptr if empty
   const Move* get_current_move() const;
+
+  // Get exit speed for current move
   float get_current_exit_speed_sqr() const;
+
+  // Discard current move
   void next_move();
  private:
   void recalculate();

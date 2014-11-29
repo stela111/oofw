@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "stepper.h"
-#include "pin_io_fake.h"
+#include <src/stepper.h>
+#include <fake/pin_io.h>
 
 class StepperTest : public ::testing::Test
 {
@@ -12,9 +12,7 @@ public:
     pins.dir = io.make_pin("dir", true);
     pins.endstop = io.make_pin("endstop");
 
-    config.steps_per_mm = 100;
-    config.max_speed = 10;
-    config.max_acceleration = 1000;
+    // Ignore config. Not used here
   }
 
 protected:

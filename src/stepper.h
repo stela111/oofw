@@ -1,6 +1,7 @@
 #ifndef STEPPER_H
 #define STEPPER_H
 
+#include <cstdint>
 #include "pin_io.h"
 
 /** Stepper is a light-weight control of i/o for one stepper motor.
@@ -20,8 +21,8 @@ class Stepper {
   /// Mapping to linear motion and limits
   struct Config {
     float steps_per_mm;
-    float max_speed;
-    float max_acceleration;
+    std::uint32_t min_us_per_step;
+    float min_us_sqr_per_step; ///< s^2/step
   };
 
   Stepper(PinIo *io, Pins pins, Config config);
