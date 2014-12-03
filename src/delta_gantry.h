@@ -4,45 +4,59 @@
 #include <vector>
 #include "planner.h"
 
+/** Gantry implementation for delta geometry
+ */
 class DeltaGantry {
  public:
-  DeltaGantry(unsigned extruders);
-
-  void move();
-
- private:
-  void update_tower_steps();
-  void update_next_unit_direction(float length);
-
-  // Returns max of cartesian distance and length of extruder moves
-  float get_move_length() const;
-  float limit_speed(float requested_speed, float length) const;
-  float limit_acc(float requested_acc, float length) const;
-  float limit_jerk(float acc) const;
-
   struct Axis {
     float steps_per_mm;
     float min_time_per_step;
     float min_time2_per_step;
   };
   
-  struct Tower : Axis {
+  struct Tower {
     float origin[3];
     float arm_length;
   };
 
-  /// Axes controlling the gantry position
+  DeltaGantry(const std::vector<Axis>& axes, const std::vector<Tower>& towers);
+
+  void set_cartesian(unsigned index, float pos);
+  void set_extruder(unsigned index, float pos);
+  void set_speed(float speed);
+  void move();
+
+ private:
+  /// Calculate next.steps for towers and steps for all axes
+  /// (next.steps for extruders has already been set by set_extruder()).
+  void update_steps();
+
+  /// Calculate length on each cartesian axis relative vector length
+  void update_next_unit_direction(float length);
+
+  // Returns max of cartesian vector distance and length of extruder moves
+  float get_move_length() const;
+
+  /// Return speed limited by each axis
+  float limit_speed(float requested_speed, float length) const;
+
+  /// Return acceleration limited by each axis
+  float limit_acc(float requested_acc, float length) const;
+
+  /// Return speed limited by cartesian jerk calculation
+  float limit_jerk(float acc) const;
+
+  /// Delta towers controlling the gantry position
   std::vector<Tower> towers;
 
-  /// Axes controlling the extruders
-  std::vector<Axis> extruders;
+  /// All axes, the first corresponding to towers,
+  /// the remaining controlling the extruders
+  std::vector<Axis> axes;
 
   struct Move {
     float cartesian[3];
     float unit_direction[3];
-    std::vector<float> extruder_pos;
-    std::vector<int> tower_steps;
-    std::vector<int> extruder_steps;
+    std::vector<int> steps;
   };
 
   Move last, next;
