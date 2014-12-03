@@ -2,36 +2,46 @@
 #define PLANNER_H
 
 #include <vector>
-struct Steps {
-};
 
-/// Maximizes speed of moves given constraints
+/// Temporary placeholder while thinking
+struct Move {};
+
+/// Plans a sequence of moves for maximum speed given constraints.
+/**
+   This planner is built around the formula: v^2 = v0^2 + 2as, for
+   final speed v, initial speed v0, acceleration a and distance s.
+   Each move is associated with constraints:
+   - requested max speed
+   - max entry speed
+   - maximum term 2as
+
+   For each added move, the planner algorithm optimizes the entry and exit
+   speed for each move in the plan so that all constraints are met.
+*/
 class Planner {
  public:
   /// Create a planner capable of planning queue_size moves ahead
-  Planner(unsigned queue_size);
+  Planner(unsigned queue_size, unsigned axes);
 
   /// Add a move to plan.
-  void plan_move(Steps steps,
+  void plan_move(const std::vector<int>& steps,
 		 float max_change_speed_sqr,
 		 float nominal_speed_sqr,
 		 float max_entry_speed_sqr);
 
-  struct Move {
-    Steps steps; // Steps per axis
-    float entry_speed_sqr; // Planned entry speed (squared)
-  };
-
-  // Check if no moves can be added
+  /// Check if no moves can be added
   bool check_full_buffer() const;
 
-  // Returns current move or nullptr if empty
-  const Move* get_current_move() const;
+  /// Returns current steps or nullptr if empty
+  const std::vector<int>* get_current_move() const;
 
-  // Get exit speed for current move
+  /// Get planned entry speed for current move
+  float get_current_entry_speed_sqr() const;
+
+  /// Get planned exit speed for current move
   float get_current_exit_speed_sqr() const;
 
-  // Discard current move
+  /// Discard current move
   void next_move();
  private:
   void recalculate();
@@ -40,12 +50,12 @@ class Planner {
 
   /**
    Data needed for planner for each linear block of motion.
-   All speeds in (mm/min)^2 to simplify calculations.
-   (Constant acceleration over distance s gives final speed v^2 = v0^2 + 2as)
    */
-  struct PlanBlock : public Move {
-    float nominal_speed_sqr; // Requested speed
-    float max_entry_speed_sqr; // Max allowed entry speed
+  struct PlanBlock {
+    std::vector<int> steps; // Planned number of steps per axis
+    float entry_speed_sqr; // Planned entry speed (squared)
+    float nominal_speed_sqr; // Requested speed (squared)
+    float max_entry_speed_sqr; // Max allowed entry speed (squared)
     float max_change_speed_sqr; // Max possible speed change in this block (2as term)
   };
 

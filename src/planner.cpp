@@ -1,13 +1,16 @@
 #include "planner.h"
 
 
-Planner::Planner(unsigned queue_size)
+Planner::Planner(unsigned queue_size, unsigned axes)
   : block_buffer(queue_size)
   , block_buffer_tail(0)
   , block_buffer_head(0)
   , next_buffer_head(1)
   , block_buffer_planned(0)
 {
+  for (auto &block : block_buffer) {
+    block.steps.resize(axes);
+  }
 }
 
 
@@ -17,13 +20,19 @@ bool Planner::check_full_buffer() const
 }
 
 
-const Planner::Move *Planner::get_current_move() const
+const std::vector<int>* Planner::get_current_move() const
 {
   if (block_buffer_head == block_buffer_tail) {
     // Buffer empty  
-    return(0);
+    return nullptr;
   }
-  return(&block_buffer[block_buffer_tail]);
+  return &block_buffer[block_buffer_tail].steps;
+}
+
+
+float Planner::get_current_entry_speed_sqr() const
+{
+  return block_buffer[block_buffer_tail].entry_speed_sqr;
 }
 
 
@@ -31,6 +40,7 @@ float Planner::get_current_exit_speed_sqr() const
 {
   std::size_t block_index = next_block_index(block_buffer_tail);
   if (block_index == block_buffer_head) {
+    // No next block
     return 0.0;
   }
   return block_buffer[block_index].entry_speed_sqr; 
@@ -50,7 +60,7 @@ void Planner::next_move()
 }
 
 
-void Planner::plan_move(Steps steps,
+void Planner::plan_move(const std::vector<int>& steps,
 			float max_change_speed_sqr,
 			float nominal_speed_sqr,
 			float max_entry_speed_sqr)
@@ -101,71 +111,7 @@ std::size_t Planner::prev_block_index(std::size_t block_index) const
   return block_index;
 }
 
-/*                            PLANNER SPEED DEFINITION                                              
-                                     +--------+   <- current->nominal_speed
-                                    /          \                                
-         current->entry_speed ->   +            \                               
-                                   |             + <- next->entry_speed (aka exit speed)
-                                   +-------------+                              
-                                       time -->                      
-                                                  
-  Recalculates the motion plan according to the following basic guidelines:
-  
-    1. Go over every feasible block sequentially in reverse order and calculate the junction speeds
-        (i.e. current->entry_speed) such that:
-      a. No junction speed exceeds the pre-computed maximum junction speed limit or nominal speeds of 
-         neighboring blocks.
-      b. A block entry speed cannot exceed one reverse-computed from its exit speed (next->entry_speed)
-         with a maximum allowable deceleration over the block travel distance.
-      c. The last (or newest appended) block is planned from a complete stop (an exit speed of zero).
-    2. Go over every block in chronological (forward) order and dial down junction speed values if 
-      a. The exit speed exceeds the one forward-computed from its entry speed with the maximum allowable
-         acceleration over the block travel distance.
-  
-  When these stages are complete, the planner will have maximized the velocity profiles throughout the all
-  of the planner blocks, where every block is operating at its maximum allowable acceleration limits. In 
-  other words, for all of the blocks in the planner, the plan is optimal and no further speed improvements
-  are possible. If a new block is added to the buffer, the plan is recomputed according to the said 
-  guidelines for a new optimal plan.
-  
-  To increase computational efficiency of these guidelines, a set of planner block pointers have been
-  created to indicate stop-compute points for when the planner guidelines cannot logically make any further
-  changes or improvements to the plan when in normal operation and new blocks are streamed and added to the
-  planner buffer. For example, if a subset of sequential blocks in the planner have been planned and are 
-  bracketed by junction velocities at their maximums (or by the first planner block as well), no new block
-  added to the planner buffer will alter the velocity profiles within them. So we no longer have to compute
-  them. Or, if a set of sequential blocks from the first block in the planner (or a optimal stop-compute
-  point) are all accelerating, they are all optimal and can not be altered by a new block added to the
-  planner buffer, as this will only further increase the plan speed to chronological blocks until a maximum
-  junction velocity is reached. However, if the operational conditions of the plan changes from infrequently
-  used feed holds or feedrate overrides, the stop-compute pointers will be reset and the entire plan is  
-  recomputed as stated in the general guidelines.
-  
-  Planner buffer index mapping:
-  - block_buffer_tail: Points to the beginning of the planner buffer. First to be executed or being executed. 
-  - block_buffer_head: Points to the buffer block after the last block in the buffer. Used to indicate whether
-      the buffer is full or empty. As described for standard ring buffers, this block is always empty.
-  - next_buffer_head: Points to next planner buffer block after the buffer head block. When equal to the 
-      buffer tail, this indicates the buffer is full.
-  - block_buffer_planned: Points to the first buffer block after the last optimally planned block for normal
-      streaming operating conditions. Use for planning optimizations by avoiding recomputing parts of the 
-      planner buffer that don't change with the addition of a new block, as describe above. In addition, 
-      this block can never be less than block_buffer_tail and will always be pushed forward and maintain 
-      this requirement when encountered by the plan_discard_current_block() routine during a cycle.
-  
-  NOTE: Since the planner only computes on what's in the planner buffer, some motions with lots of short 
-  line segments, like G2/3 arcs or complex curves, may seem to move slow. This is because there simply isn't
-  enough combined distance traveled in the entire buffer to accelerate up to the nominal speed and then 
-  decelerate to a complete stop at the end of the buffer, as stated by the guidelines. If this happens and
-  becomes an annoyance, there are a few simple solutions: (1) Maximize the machine acceleration. The planner
-  will be able to compute higher velocity profiles within the same combined distance. (2) Maximize line 
-  motion(s) distance per block to a desired tolerance. The more combined distance the planner has to use,
-  the faster it can go. (3) Maximize the planner buffer size. This also will increase the combined distance
-  for the planner to compute over. It also increases the number of computations the planner has to perform
-  to compute an optimal plan, so select carefully. The Arduino 328p memory is already maxed out, but future
-  ARM versions should have enough memory and speed for look-ahead blocks numbering up to a hundred or more.
 
-*/
 void Planner::recalculate() 
 {   
   // Initialize block index to the last block in the planner buffer.

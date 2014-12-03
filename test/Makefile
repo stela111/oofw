@@ -2,7 +2,7 @@ CXX=g++
 RM=rm -f
 CPPFLAGS=-pthread -std=c++11 -Wall -I..
 LDLIBS=-lgtest -lgtest_main $(CPPFLAGS)
-SRCS=test.cpp test_stepper.cpp test_coordinated_axes.cpp ../src/planner.cpp ../src/stepper.cpp ../src/coordinated_axes.cpp
+SRCS=test.cpp test_stepper.cpp ../src/planner.cpp ../src/stepper.cpp ../src/delta_gantry.cpp
 OBJS=$(subst .cpp,.o,$(SRCS))
 
 unittest : $(OBJS)
