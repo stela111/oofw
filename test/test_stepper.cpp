@@ -11,19 +11,16 @@ public:
     pins.step = io.make_pin("step", true);
     pins.dir = io.make_pin("dir", true);
     pins.endstop = io.make_pin("endstop");
-
-    // Ignore config. Not used here
   }
 
 protected:
   fake::PinIo io;
   Stepper::Pins pins;
-  Stepper::Config config;
 };
 
 
 TEST_F(StepperTest, Init) {
-  Stepper stepper(&io, pins, config);
+  Stepper stepper(&io, pins);
   EXPECT_FALSE(io.get(pins.enable));
   EXPECT_FALSE(io.get(pins.step));
   EXPECT_FALSE(io.get(pins.dir));
@@ -32,7 +29,7 @@ TEST_F(StepperTest, Init) {
 
 
 TEST_F(StepperTest, EnableAndDisable) {
-  Stepper stepper(&io, pins, config);
+  Stepper stepper(&io, pins);
 
   stepper.enable();
   EXPECT_TRUE(io.get(pins.enable));
@@ -44,7 +41,7 @@ TEST_F(StepperTest, EnableAndDisable) {
 }
 
 TEST_F(StepperTest, Step) {
-  Stepper stepper(&io, pins, config);
+  Stepper stepper(&io, pins);
 
   stepper.step();
   EXPECT_FALSE(io.get(pins.step));
@@ -58,7 +55,7 @@ TEST_F(StepperTest, Step) {
 }
 
 TEST_F(StepperTest, Dir) {
-  Stepper stepper(&io, pins, config);
+  Stepper stepper(&io, pins);
 
   stepper.set_direction(false);
   EXPECT_FALSE(io.get(pins.dir));
@@ -67,7 +64,7 @@ TEST_F(StepperTest, Dir) {
 }
 
 TEST_F(StepperTest, Position) {
-  Stepper stepper(&io, pins, config);
+  Stepper stepper(&io, pins);
 
   stepper.enable();
   stepper.set_position(100);
@@ -86,7 +83,7 @@ TEST_F(StepperTest, Position) {
 
 
 TEST_F(StepperTest, StopOnEndstop) {
-  Stepper stepper(&io, pins, config);
+  Stepper stepper(&io, pins);
 
   stepper.set_position(0);
   stepper.set_direction(true);

@@ -1,9 +1,8 @@
 #include "stepper.h"
 
-Stepper::Stepper(PinIo *io, Pins pins, Config config)
+Stepper::Stepper(PinIo *io, Pins pins)
   : io_(io)
   , pins_(pins)
-  , config_(config)
   , position_(0)
   , state_(State::DISABLED)
   , direction_(true)

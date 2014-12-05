@@ -2,18 +2,29 @@
 #define DELTA_GANTRY
 
 #include <vector>
-#include "planner.h"
+#include "gantry.h"
+
+class Planner;
 
 /** Gantry implementation for delta geometry
  */
-class DeltaGantry {
+class DeltaGantry : public Gantry {
  public:
+  /// Per axis configuration
   struct Axis {
     float steps_per_mm;
     float min_time_per_step;
     float min_time2_per_step;
   };
-  
+
+  /// Delta tower configuration.
+  /** All towers move parallel with z-axis.
+      The end effector is regarded to have no size,
+      which means that the tower origin is defined
+      as the x,y offset between arm joints when
+      end effector is positioned on center of bed.
+      The z offset is used to compensate for end stop position.
+   */
   struct Tower {
     float origin[3];
     float arm_length;
@@ -21,14 +32,23 @@ class DeltaGantry {
 
   DeltaGantry(const std::vector<Axis>& axes, const std::vector<Tower>& towers);
 
+  // Gantry interface
+
   void set_cartesian(unsigned index, float pos);
   void set_extruder(unsigned index, float pos);
   void set_speed(float speed);
-  void move();
+  bool push(Planner &planner);
 
  private:
-  /// Calculate next.steps for towers and steps for all axes
-  /// (next.steps for extruders has already been set by set_extruder()).
+  /// Update next to position at most max_length towards target
+  /** @returns length of move
+   */
+  float update_next_pos();
+
+  /// Update next.steps from cartesian and extruder_pos
+  void update_next_steps();
+
+  /// Calculate steps for all axes 
   void update_steps();
 
   /// Calculate length on each cartesian axis relative vector length
@@ -56,17 +76,20 @@ class DeltaGantry {
   struct Move {
     float cartesian[3];
     float unit_direction[3];
+    std::vector<float> extruder_pos;
     std::vector<int> steps;
   };
 
   Move last, next;
+  float target_cartesian[3];
+  std::vector<float> target_extruder_pos;
+  bool more_moves;
 
   std::vector<int> steps;
   float junction_deviation;
   float requested_speed;
   float requested_acc;
-
-  Planner planner;
+  float max_length;
 };
 
 

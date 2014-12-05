@@ -18,14 +18,7 @@ class Stepper {
     PinIo::Pin endstop;
   };
 
-  /// Mapping to linear motion and limits
-  struct Config {
-    float steps_per_mm;
-    std::uint32_t min_us_per_step;
-    float min_us_sqr_per_step; ///< s^2/step
-  };
-
-  Stepper(PinIo *io, Pins pins, Config config);
+  Stepper(PinIo *io, Pins pins);
   
   /// State of stepper motor
   enum class State {
@@ -77,15 +70,9 @@ class Stepper {
     return position_;
   }
 
-  /// Get stepper configuration
-  const Config& config() const {
-    return config_;
-  }
-  
  private:
   PinIo *io_;
   Pins pins_;
-  Config config_;
 
   std::int32_t position_;
   State state_;

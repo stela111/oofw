@@ -30,13 +30,16 @@ class Planner {
 		 float max_entry_speed_sqr);
 
   /// Check if no moves can be added
-  bool check_full_buffer() const;
+  bool is_buffer_full() const;
 
   /// Returns current steps or nullptr if empty
-  const std::vector<int>* get_current_move() const;
+  const std::vector<int>* get_current_steps() const;
 
   /// Get planned entry speed for current move
   float get_current_entry_speed_sqr() const;
+
+  /// Get requested nominal speed for current move
+  float get_current_speed_sqr() const;
 
   /// Get planned exit speed for current move
   float get_current_exit_speed_sqr() const;

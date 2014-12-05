@@ -14,13 +14,13 @@ Planner::Planner(unsigned queue_size, unsigned axes)
 }
 
 
-bool Planner::check_full_buffer() const
+bool Planner::is_buffer_full() const
 {
   return (block_buffer_tail == next_buffer_head);
 }
 
 
-const std::vector<int>* Planner::get_current_move() const
+const std::vector<int>* Planner::get_current_steps() const
 {
   if (block_buffer_head == block_buffer_tail) {
     // Buffer empty  
@@ -33,6 +33,12 @@ const std::vector<int>* Planner::get_current_move() const
 float Planner::get_current_entry_speed_sqr() const
 {
   return block_buffer[block_buffer_tail].entry_speed_sqr;
+}
+
+
+float Planner::get_current_speed_sqr() const
+{
+  return block_buffer[block_buffer_tail].nominal_speed_sqr;
 }
 
 

@@ -1,10 +1,9 @@
 #include "delta_gantry.h"
 #include <cmath>
 #include <cstdlib>
+#include "planner.h"
 
 namespace {
-  const unsigned num_towers = 3;
-  
   float calculate_tower_pos(float cartesian[3],
 			    const DeltaGantry::Tower& tower) {
     float dist[3];
@@ -22,15 +21,23 @@ DeltaGantry::DeltaGantry(const std::vector<Axis>& axes,
 			 const std::vector<Tower>& towers)
   : towers(towers)
   , axes(axes)
+  , target_extruder_pos(axes.size()-towers.size())
+  , more_moves(true)
   , steps(axes.size())
+  , junction_deviation(.01)
   , requested_speed(0)
-  , requested_acc(1000)
-  , planner(16, axes.size())
+  , requested_acc(300)
+  , max_length(.1)
 {
+  for (unsigned coord = 0; coord < 3; coord++) {
+    target_cartesian[coord] = 0;
+    next.cartesian[coord] = 0;
+    next.unit_direction[coord] = 0;
+  }
+
+  next.extruder_pos = target_extruder_pos;
   next.steps.assign(axes.size(),0);
-  next.cartesian[0] = 0;
-  next.cartesian[1] = 0;
-  next.cartesian[2] = 0;  
+  update_next_steps();
   last = next;
 }
 
@@ -38,16 +45,15 @@ DeltaGantry::DeltaGantry(const std::vector<Axis>& axes,
 void DeltaGantry::set_cartesian(unsigned index, float pos)
 {
   if (index < 3) {
-    next.cartesian[index] = pos;
+    target_cartesian[index] = pos;
   }
 }
 
 
 void DeltaGantry::set_extruder(unsigned index, float pos)
 {
-  unsigned axis = index + towers.size();
-  if (axis < axes.size()) {
-    next.steps[axis] = pos*axes[axis].steps_per_mm;
+  if (index < target_extruder_pos.size()) {
+    target_extruder_pos[index] = pos;
   }
 }
 
@@ -58,28 +64,77 @@ void DeltaGantry::set_speed(float speed)
 }
 
   
-void DeltaGantry::move()
+bool DeltaGantry::push(Planner &planner)
 {
-  update_steps();
-  float length = get_move_length();
+  if (planner.is_buffer_full()) {
+    return false;
+  }
+  
+  float length = update_next_pos();
+  update_next_steps();
   update_next_unit_direction(length);
+
+  update_steps();
   float speed = limit_speed(requested_speed, length);
   float acc = limit_acc(requested_acc, length);
   float init_speed = limit_jerk(acc);
+
   planner.plan_move(steps, 
 		    2*acc*length,
 		    speed*speed,
 		    init_speed*init_speed);
   last = next;
+
+  return more_moves;
 }
 
 
-void DeltaGantry::update_steps()
+float DeltaGantry::update_next_pos()
+{
+  float length = get_move_length();
+
+  more_moves = length > max_length;
+
+  if (!more_moves) {
+    // Last move. Copy target to next
+
+    for (unsigned coord = 0; coord < 3; coord++) {
+      next.cartesian[coord] = target_cartesian[coord];
+    }
+    next.extruder_pos = target_extruder_pos;
+
+    return length;
+  }
+
+  float rel = max_length/length;
+  for (unsigned coord = 0; coord < 3; coord++) {
+    next.cartesian[coord] = last.cartesian[coord] + 
+      (target_cartesian[coord] - last.cartesian[coord])*rel;
+  }
+  for (unsigned extr = 0; extr < target_extruder_pos.size(); ++extr) {
+    next.extruder_pos[extr] = last.extruder_pos[extr] +
+      (target_extruder_pos[extr] - last.extruder_pos[extr])*rel;
+  }
+
+  return max_length;
+}
+
+
+void DeltaGantry::update_next_steps()
 {
   for (unsigned tower = 0; tower < towers.size(); ++tower) {
     float pos = calculate_tower_pos(next.cartesian, towers[tower]);
     next.steps[tower] = pos * axes[tower].steps_per_mm;
   }
+
+  for (unsigned extr = 0; extr < next.extruder_pos.size(); ++extr) {
+    next.steps[extr + towers.size()] = next.extruder_pos[extr] *
+      axes[extr + towers.size()].steps_per_mm;
+  }
+}
+
+void DeltaGantry::update_steps()
+{
   for (unsigned axis = 0; axis < axes.size(); ++axis) {
     steps[axis] = next.steps[axis] - last.steps[axis];
   }
@@ -91,19 +146,21 @@ float DeltaGantry::get_move_length() const
   // Vector distance for cartesian coordinates
   float sqr_sum = 0;
   for (unsigned coord = 0; coord < 3; coord++) {
-    float delta = next.cartesian[coord] - last.cartesian[coord];
+    float delta = target_cartesian[coord] - last.cartesian[coord];
     sqr_sum += delta*delta;
   }
 
+  float length = sqrtf(sqr_sum);
+
   // Ensure length is not less than any axis distance
   // Skip tower coordinates since these are handled above
-  for (unsigned axis = towers.size(); axis < axes.size(); ++axis)
+  for (unsigned extr = 0; extr < target_extruder_pos.size(); ++extr)
   {
-    float delta = std::abs(steps[axis])/axes[axis].steps_per_mm;
-    sqr_sum = std::max(sqr_sum, delta*delta);
+    float delta = target_extruder_pos[extr] - last.extruder_pos[extr];
+    length = std::max(length, std::abs(delta));
   }
 
-  return sqrtf(sqr_sum);
+  return length;
 }
 
 
@@ -145,6 +202,6 @@ float DeltaGantry::limit_jerk(float acc) const
   for (unsigned coord = 0; coord < 3; coord++) {
     cos_theta -= last.unit_direction[coord] * next.unit_direction[coord];
   }
-  float sin_theta_d2 = sqrt(0.5f*(1.0f-cos_theta));
+  float sin_theta_d2 = std::sqrt(0.5f*(1.0f-cos_theta));
   return acc * junction_deviation * sin_theta_d2/(1.0f - sin_theta_d2);
 }

@@ -5,20 +5,20 @@ TEST(Planner, PlanOne) {
   Planner planner(2, 1);
   std::vector<int> steps(1);
 
-  EXPECT_FALSE(planner.check_full_buffer());
-  EXPECT_EQ(0, planner.get_current_move());
+  EXPECT_FALSE(planner.is_buffer_full());
+  EXPECT_EQ(0, planner.get_current_steps());
   
   planner.plan_move(steps, 9,9,9);
-  EXPECT_TRUE(planner.check_full_buffer());
+  EXPECT_TRUE(planner.is_buffer_full());
 
-  auto *move = planner.get_current_move();
+  auto *move = planner.get_current_steps();
   EXPECT_TRUE(move != nullptr);
   EXPECT_EQ(0, planner.get_current_entry_speed_sqr());
   EXPECT_EQ(0, planner.get_current_exit_speed_sqr());
   planner.next_move();
 
-  EXPECT_FALSE(planner.check_full_buffer());
-  EXPECT_EQ(nullptr, planner.get_current_move());
+  EXPECT_FALSE(planner.is_buffer_full());
+  EXPECT_EQ(nullptr, planner.get_current_steps());
 }
 
 TEST(Planner, PlanAccLimit) {
