@@ -5,7 +5,11 @@
 
 class TimerCallback {
  public:
-  virtual void on_timer() = 0;
+  /// Return requested milliseconds to next call
+  /** counting from start of this call.
+      If 0 is returned, timer stops.
+   */  
+  virtual std::uint32_t on_timer() = 0;
 };
 
 /// Provides asynchronous timer callbacks at requested points in time
@@ -14,8 +18,9 @@ class TimerCallback {
  */
 class Timer {
  public:
-  virtual void reset_time() = 0;
-  virtual void call_at(std::uint32_t at, TimerCallback *cb) = 0;
+  /// Start 
+  virtual void start(TimerCallback *cb) = 0;
+  virtual void stop() = 0;
 };
 
 #endif
