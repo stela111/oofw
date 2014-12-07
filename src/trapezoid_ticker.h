@@ -24,8 +24,8 @@ class TrapezoidTicker : public TimerCallback {
 		float cruiseRate,
 		float acc);
 
-  std::uint32_t on_timer();
  private:
+  std::uint32_t on_timer();
   Timer *timer;
   std::vector<Stepper*> steppers;
   std::vector<Bresenham> bresenhams;

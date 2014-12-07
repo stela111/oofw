@@ -41,20 +41,25 @@ struct TrapezoidParameters {
   std::uint32_t decelerateAfter;
 };
 
-/// TrapezoidGenerator produces delays for trapezoid shaped pulse frequency
+/// TrapezoidGenerator produces delays for trapezoid shaped pulse frequency.
 /**
-   Implementation based on this article: D. Austin, Generate stepper-motor speed
-   profiles in real time, article in Embedded Systems Programming January 2005.
-   http://www.embedded.com//showArticle.jhtml?articleID=56800129
+   Implementation based on "Generate stepper-motor speed profiles in real time"
+   by D. Austin, article in Embedded Systems Programming January 2005.
+   See http://fab.cba.mit.edu/classes/MIT/961.09/projects/i0/Stepper_Motor_Speed_Profile.pdf
  */
 class TrapezoidGenerator {
 public:
-    // Create object initiated with params    
     TrapezoidGenerator(TrapezoidParameters params = TrapezoidParameters());
 
-    // Calculate next delay.
-    // Returns 0 if trapezoid is completed.
+    /// Calculate next delay.
+    /** Returns 0 if trapezoid is completed.
+     */
     std::uint32_t next_delay();
+
+    /// Returns true when last delay has been calculated by next_delay().
+    bool is_done() {
+      return steps == step;
+    }
 private:
     std::uint32_t accelerateUntil;
     std::uint32_t decelerateAfter;

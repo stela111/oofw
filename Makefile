@@ -1,9 +1,9 @@
-.PHONY : test
+.PHONY : test doc
 
-run_test: test lib
+run_test: test
 	test/unittest	
 
-test:
+test: lib
 	$(MAKE) -C test
 
 lib:

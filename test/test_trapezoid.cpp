@@ -30,15 +30,16 @@ TEST_F(TrapezoidTest, simple) {
   TrapezoidTicker ticker(stepperPtrs, &timer);
   steppers[0].enable();
   steppers[0].set_direction(true);
-  ticker.generate(std::vector<int>({5}),
+  ticker.generate(std::vector<int>({6}),
 		  10,
 		  0,
 		  0,
 		  10,
-		  10);
+		  15);
 
   std::uint32_t delay;
   while((delay = timer.fake_next())) {
-    std::cout << delay*1e-6 << ", " << steppers[0].position() << std::endl;
+    std::cout << steppers[0].position() << ", " << delay*1e-6 << std::endl;
   }
+  EXPECT_EQ(6, steppers[0].position());
 }

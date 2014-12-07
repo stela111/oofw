@@ -28,16 +28,24 @@ void TrapezoidTicker::generate(const std::vector<int>& steps,
 
 
 std::uint32_t TrapezoidTicker::on_timer() {
+  if (trapezoid.is_done()) {
+    return 0;
+  }
+
   for (unsigned stepper = 0; stepper < steppers.size(); ++stepper) {
     if (bresenhams[stepper].tick()) {
       steppers[stepper]->step();
     }
   }
-
+  
   std::uint32_t next = trapezoid.next_delay();
 
   for (unsigned stepper = 0; stepper < steppers.size(); ++stepper) {
     steppers[stepper]->unstep();
+  }
+
+  if (trapezoid.is_done()) {
+    // @todo: prepare next trapezoid
   }
 
   return next;

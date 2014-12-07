@@ -1,9 +1,7 @@
 #ifndef BRESENHAM_H
 #define BRESENHAM_H
 
-/**
- * Bresenham's line drawing algorithm
- */
+/// Bresenham's line drawing algorithm
 class Bresenham {
 public:
   /// Make dy steps per dx ticks.

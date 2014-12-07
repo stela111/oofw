@@ -2,7 +2,7 @@ CXX=g++
 RM=rm -f
 CPPFLAGS=-pthread -g -std=c++11 -Wall -I.. -L../src
 LDLIBS=-loofw -lgtest -lgtest_main $(CPPFLAGS)
-SRCS=test.cpp test_stepper.cpp delta_gantry.cpp test_trapezoid.cpp
+SRCS=test.cpp test_stepper.cpp delta_gantry.cpp test_trapezoid.cpp test_bresenham.cpp test_trapezoid_generator.cpp
 OBJS=$(subst .cpp,.o,$(SRCS))
 
 unittest : $(OBJS) ../src/liboofw.a
