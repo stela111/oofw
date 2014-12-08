@@ -9,7 +9,7 @@ Planner::Planner(unsigned queue_size, unsigned axes)
   , block_buffer_planned(0)
 {
   for (auto &block : block_buffer) {
-    block.steps.resize(axes);
+    block.move.steps.resize(axes);
   }
 }
 
@@ -20,13 +20,13 @@ bool Planner::is_buffer_full() const
 }
 
 
-const std::vector<int>* Planner::get_current_steps() const
+const Move* Planner::get_current_move() const
 {
   if (block_buffer_head == block_buffer_tail) {
     // Buffer empty  
     return nullptr;
   }
-  return &block_buffer[block_buffer_tail].steps;
+  return &block_buffer[block_buffer_tail].move;
 }
 
 
@@ -67,12 +67,18 @@ void Planner::next_move()
 
 
 void Planner::plan_move(const std::vector<int>& steps,
+			unsigned events,
+			float speed,
+			float acceleration,
 			float max_change_speed_sqr,
 			float nominal_speed_sqr,
 			float max_entry_speed_sqr)
 {
   PlanBlock *block = &block_buffer[block_buffer_head];
-  block->steps = steps;
+  block->move.steps = steps;
+  block->move.events = events;
+  block->move.speed = speed;
+  block->move.acceleration = acceleration;
   block->entry_speed_sqr = 0;
   block->nominal_speed_sqr = nominal_speed_sqr;
   block->max_change_speed_sqr = max_change_speed_sqr;

@@ -2,9 +2,7 @@
 #define PLANNER_H
 
 #include <vector>
-
-/// Temporary placeholder while thinking
-struct Move {};
+#include "move.h"
 
 /// Plans a sequence of moves for maximum speed given constraints.
 /**
@@ -25,6 +23,9 @@ class Planner {
 
   /// Add a move to plan.
   void plan_move(const std::vector<int>& steps,
+		 unsigned events,
+		 float speed,
+		 float acceleration,
 		 float max_change_speed_sqr,
 		 float nominal_speed_sqr,
 		 float max_entry_speed_sqr);
@@ -33,7 +34,7 @@ class Planner {
   bool is_buffer_full() const;
 
   /// Returns current steps or nullptr if empty
-  const std::vector<int>* get_current_steps() const;
+  const Move* get_current_move() const;
 
   /// Get planned entry speed for current move
   float get_current_entry_speed_sqr() const;
@@ -55,7 +56,7 @@ class Planner {
    Data needed for planner for each linear block of motion.
    */
   struct PlanBlock {
-    std::vector<int> steps; // Planned number of steps per axis
+    Move move;
     float entry_speed_sqr; // Planned entry speed (squared)
     float nominal_speed_sqr; // Requested speed (squared)
     float max_entry_speed_sqr; // Max allowed entry speed (squared)

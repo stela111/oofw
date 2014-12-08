@@ -37,31 +37,34 @@ class DeltaGantry : public Gantry {
   void set_cartesian(unsigned index, float pos);
   void set_extruder(unsigned index, float pos);
   void set_speed(float speed);
-  bool push(Planner &planner);
+  bool get_move(LinearMove &move);
 
  private:
-  /// Update next to position at most max_length towards target
-  /** @returns length of move
+  /// Update next to position at most max_length towards target.
+  /** As a side-effect, updates length member if returned true.
+      @returns false if less than min_length from target, else true.
    */
-  float update_next_pos();
+  bool update_next_pos();
 
   /// Update next.steps from cartesian and extruder_pos
   void update_next_steps();
 
-  /// Calculate steps for all axes 
-  void update_steps();
+  /// Calculate steps for all axes
+  void update_steps(std::vector<int>& steps);
 
   /// Calculate length on each cartesian axis relative vector length
-  void update_next_unit_direction(float length);
+  void update_next_unit_direction();
 
   // Returns max of cartesian vector distance and length of extruder moves
   float get_move_length() const;
 
   /// Return speed limited by each axis
-  float limit_speed(float requested_speed, float length) const;
+  float limit_speed(float requested_speed,
+		    const std::vector<int>& steps) const;
 
   /// Return acceleration limited by each axis
-  float limit_acc(float requested_acc, float length) const;
+  float limit_acc(float requested_acc,
+		  const std::vector<int>& steps) const;
 
   /// Return speed limited by cartesian jerk calculation
   float limit_jerk(float acc) const;
@@ -83,13 +86,13 @@ class DeltaGantry : public Gantry {
   Move last, next;
   float target_cartesian[3];
   std::vector<float> target_extruder_pos;
-  bool more_moves;
 
-  std::vector<int> steps;
+  float length;
   float junction_deviation;
   float requested_speed;
   float requested_acc;
   float max_length;
+  float min_length;
 };
 
 

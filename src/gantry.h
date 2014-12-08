@@ -5,6 +5,12 @@ class Planner;
 
 /// Controls the printer mechanics in machine coordinates.
 /**
+   This class is responsible for converting a request to move
+   the gantry a certain distance into stepper motor steps for
+   the axes used to control the gantry and extruders.
+   Input is in units millimeters and seconds, whereas
+   output is in units of steps and seconds.
+
    Lengthy operations are performed asynchronously. First,
    a move is set up, then it is pushed to a Planner.
    A Gantry move may consist of many Planner moves. Therefore
@@ -31,15 +37,39 @@ class Gantry {
   /// Set speed in mm/s
   virtual void set_speed(float speed) = 0;
 
-  /// Push move to planner.
+  /// Specification for a linear stepper motion
+  /** All units are in steps and seconds, i.e. this can be
+      directly used to control steppers.
+      Rate is expressed in terms of the entire move,
+      i.e. multiply with steps to get rate for axis.
+      The same applies for acceleration.
+  */
+  struct LinearMove {
+    /// Stepper steps for each axis in the Gantry.
+    std::vector<int> steps;
+
+    /// Max rate, not to be exceeded
+    float max_rate;
+
+    /// Acceleration expressed in 1/s^2
+    float acceleration;
+
+    /// Max allowed rate at start of move (limited by jerk)
+    float max_entry_rate;
+
+    /// Metric length of move
+    float length;
+  };
+
+  /// Get linear move.
   /** As a Gantry move may consist of many Planner moves,
       this method needs to be called repeatedly until it
       returns false.
-      @returns true until move completely pushed to planner
-      @note If planner is full, no move is pushed and false is returned.
-      @note The same planner needs to be used for all push() calls
+      @param move set to next linear segment
+      @returns false when no more moves are needed.
+               @a move has not been modified.
   */
-  virtual bool push(Planner &planner) = 0;
+  bool get_move(LinearMove& move);
 };
 
 #endif

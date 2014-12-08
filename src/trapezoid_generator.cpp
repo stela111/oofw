@@ -88,6 +88,7 @@ TrapezoidParameters::TrapezoidParameters(std::uint32_t steps,
   // Setup ramp params
   this->n0 = stepsToEntry;
   if (stepsToEntry == 0) {
+    // Special case for start from zero speed
     this->c0 = round(initial_c(timerFreq, acc));
   }
   else {
