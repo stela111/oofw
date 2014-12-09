@@ -23,12 +23,10 @@ class Planner {
 
   /// Add a move to plan.
   void plan_move(const std::vector<int>& steps,
-		 unsigned events,
+		 float length,
 		 float speed,
 		 float acceleration,
-		 float max_change_speed_sqr,
-		 float nominal_speed_sqr,
-		 float max_entry_speed_sqr);
+		 float entry_speed);
 
   /// Check if no moves can be added
   bool is_buffer_full() const;

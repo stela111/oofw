@@ -14,8 +14,8 @@ static void print_move(const Gantry::LinearMove& move) {
     std::cout << move.steps.at(axis);
   }
   std::cout << ")"
-	    << ", max_entry_rate = " << move.max_entry_rate
-	    << ", max_rate = " << move.max_rate
+	    << ", entry_speed = " << move.entry_speed
+	    << ", cruise_speed = " << move.cruise_speed
 	    << ", acceleration = " << move.acceleration
             << ", length = " << move.length
 	    << std::endl;

@@ -67,21 +67,19 @@ void Planner::next_move()
 
 
 void Planner::plan_move(const std::vector<int>& steps,
-			unsigned events,
+			float length,
 			float speed,
 			float acceleration,
-			float max_change_speed_sqr,
-			float nominal_speed_sqr,
-			float max_entry_speed_sqr)
+			float entry_speed)
 {
   PlanBlock *block = &block_buffer[block_buffer_head];
   block->move.steps = steps;
-  block->move.events = events;
+  block->move.length = length;
   block->move.speed = speed;
   block->move.acceleration = acceleration;
   block->entry_speed_sqr = 0;
-  block->nominal_speed_sqr = nominal_speed_sqr;
-  block->max_change_speed_sqr = max_change_speed_sqr;
+  block->nominal_speed_sqr = speed*speed;
+  block->max_change_speed_sqr = 2*length*acceleration;
 
   if (block_buffer_head == block_buffer_tail) {
     block->max_entry_speed_sqr = 0;
@@ -90,8 +88,8 @@ void Planner::plan_move(const std::vector<int>& steps,
     // Not first block, compute entry speed
     float prev_nominal_speed_sqr = 
       block_buffer[prev_block_index(block_buffer_head)].nominal_speed_sqr;
-    block->max_entry_speed_sqr = std::min(std::min(max_entry_speed_sqr,
-						   nominal_speed_sqr),
+    block->max_entry_speed_sqr = std::min(std::min(entry_speed*entry_speed,
+						   block->nominal_speed_sqr),
 					  prev_nominal_speed_sqr);
   }
   

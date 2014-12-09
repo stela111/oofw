@@ -30,6 +30,8 @@ class TrapezoidTicker : public TimerCallback {
   std::vector<Stepper*> steppers;
   std::vector<Bresenham> bresenhams;
   TrapezoidGenerator trapezoid;
+  bool unstep;
+  std::uint32_t step_duration;
 };
 
 #endif

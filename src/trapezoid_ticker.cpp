@@ -1,11 +1,14 @@
 #include "trapezoid_ticker.h"
 #include "stepper.h"
+#include <cmath>
 
 TrapezoidTicker::TrapezoidTicker(const std::vector<Stepper *>& steppers,
 				 Timer* timer)
   : timer(timer)
   , steppers(steppers)
   , bresenhams(steppers.size())
+  , unstep(false)
+  , step_duration(10)
 {}
 
 
@@ -20,7 +23,7 @@ void TrapezoidTicker::generate(const std::vector<int>& steps,
   trapezoid = TrapezoidGenerator(params);
 
   for (unsigned stepper = 0; stepper < steppers.size(); ++stepper) {
-    bresenhams[stepper] = Bresenham(steps[stepper], events);
+    bresenhams[stepper] = Bresenham(std::abs(steps[stepper]), events);
   }
 
   timer->start(this);
@@ -28,25 +31,32 @@ void TrapezoidTicker::generate(const std::vector<int>& steps,
 
 
 std::uint32_t TrapezoidTicker::on_timer() {
-  if (trapezoid.is_done()) {
-    return 0;
-  }
+  if (unstep) {
+    unstep = false;
 
-  for (unsigned stepper = 0; stepper < steppers.size(); ++stepper) {
-    if (bresenhams[stepper].tick()) {
-      steppers[stepper]->step();
+    for (unsigned stepper = 0; stepper < steppers.size(); ++stepper) {
+      steppers[stepper]->unstep();
     }
-  }
-  
-  std::uint32_t next = trapezoid.next_delay();
 
-  for (unsigned stepper = 0; stepper < steppers.size(); ++stepper) {
-    steppers[stepper]->unstep();
-  }
+    std::uint32_t remaining = trapezoid.next_delay() - step_duration;
 
-  if (trapezoid.is_done()) {
-    // @todo: prepare next trapezoid
+    if (trapezoid.is_done()) {
+      // @todo: prepare next trapezoid
+    }
+    return remaining;
   }
+  else {
+    if (trapezoid.is_done()) {
+      return 0;
+    }
+    
+    for (unsigned stepper = 0; stepper < steppers.size(); ++stepper) {
+      if (bresenhams[stepper].tick()) {
+	steppers[stepper]->step();
+      }
+    }
 
-  return next;
+    unstep = true;
+    return step_duration;
+  }
 }

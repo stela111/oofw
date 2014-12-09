@@ -71,14 +71,13 @@ bool DeltaGantry::get_move(LinearMove &move)
 
   update_next_steps();
   update_next_unit_direction();
-  update_steps(move.steps);
-  float rate = limit_speed(requested_speed, move.steps);
-  float rate_acc = limit_acc(requested_acc, move.steps);
-  float entry_rate = limit_jerk(rate_acc);
 
-  move.max_rate = rate;
-  move.acceleration = rate_acc;
-  move.max_entry_rate = entry_rate;
+  update_steps(move.steps);
+  move.cruise_speed = std::min(requested_speed,
+			length/min_time(move.steps));
+  move.acceleration = std::min(requested_acc,
+			       length/min_time2(move.steps));
+  move.entry_speed = max_entry_speed(requested_acc);
   move.length = length;
 
   last = next;
@@ -175,33 +174,30 @@ void DeltaGantry::update_next_unit_direction()
   }
 }
 
-float DeltaGantry::limit_speed(float requested_speed,
-			       const std::vector<int>& steps) const
+float DeltaGantry::min_time(const std::vector<int>& steps) const
 {
-  float max_time_limit = 0;
+  float min_time = 0;
   for (unsigned axis = 0; axis < axes.size(); ++axis) {
     float axes_min_time = axes[axis].min_time_per_step*std::abs(steps[axis]);
-    max_time_limit = std::max(max_time_limit, axes_min_time);
+    min_time = std::max(min_time, axes_min_time);
   }
-  float allowed_speed = 1.0f/max_time_limit;
-  return std::min(requested_speed/length, allowed_speed);
+  return min_time;
 }
 
 
-float DeltaGantry::limit_acc(float requested_acc,
-			     const std::vector<int>& steps) const
+float DeltaGantry::min_time2(const std::vector<int>& steps) const
 {
-  float max_time2_limit = 0;
+  // Calculates the minimum allowed time2, i.e. max of individual mins.
+  float min_time2 = 0;
   for (unsigned axis = 0; axis < axes.size(); axis++) {
     float axis_min_time2 = axes[axis].min_time2_per_step*std::abs(steps[axis]);
-    max_time2_limit = std::max(max_time2_limit, axis_min_time2);
+    min_time2 = std::max(min_time2, axis_min_time2);
   }
-  float allowed_acc = 1.0f/max_time2_limit;
-  return std::min(requested_acc/length, allowed_acc);
+  return min_time2;
 }
 
 
-float DeltaGantry::limit_jerk(float acc) const
+float DeltaGantry::max_entry_speed(float acc) const
 {
   float cos_theta = 0;
   for (unsigned coord = 0; coord < 3; coord++) {
@@ -213,6 +209,6 @@ float DeltaGantry::limit_jerk(float acc) const
   }
 
   float sin_theta_d2 = std::sqrt(0.5f*(1.0f-cos_theta));
-  return std::sqrt(acc * junction_deviation / length *
-		    sin_theta_d2/(1.0f - sin_theta_d2));
+  return std::sqrt(acc * junction_deviation *
+		   sin_theta_d2/(1.0f - sin_theta_d2));
 }

@@ -38,26 +38,12 @@ class Gantry {
   virtual void set_speed(float speed) = 0;
 
   /// Specification for a linear stepper motion
-  /** All units are in steps and seconds, i.e. this can be
-      directly used to control steppers.
-      Rate is expressed in terms of the entire move,
-      i.e. multiply with steps to get rate for axis.
-      The same applies for acceleration.
-  */
   struct LinearMove {
     /// Stepper steps for each axis in the Gantry.
     std::vector<int> steps;
-
-    /// Max rate, not to be exceeded
-    float max_rate;
-
-    /// Acceleration expressed in 1/s^2
+    float cruise_speed;
     float acceleration;
-
-    /// Max allowed rate at start of move (limited by jerk)
-    float max_entry_rate;
-
-    /// Metric length of move
+    float entry_speed;
     float length;
   };
 

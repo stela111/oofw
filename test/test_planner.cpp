@@ -8,7 +8,7 @@ TEST(Planner, PlanOne) {
   EXPECT_FALSE(planner.is_buffer_full());
   EXPECT_EQ(nullptr, planner.get_current_move());
   
-  planner.plan_move(steps, 0,0,0, 9,9,9);
+  planner.plan_move(steps, 1, 1, 1, 0);
   EXPECT_TRUE(planner.is_buffer_full());
 
   auto *move = planner.get_current_move();
@@ -25,18 +25,18 @@ TEST(Planner, PlanAccLimit) {
   Planner planner(16,1);
   std::vector<int> steps(1);
 
-  planner.plan_move(steps, 0,0,0, 4, 9, 0);
-  planner.plan_move(steps, 0,0,0, 6, 9, 9);
-  planner.plan_move(steps, 0,0,0, 5, 9, 9);
-  planner.plan_move(steps, 0,0,0, 5, 9, 9);
+  planner.plan_move(steps, 1, 10, 2, 10);
+  planner.plan_move(steps, 1, 10, 1, 10);
+  planner.plan_move(steps, 1, 10, 2, 10);
+  planner.plan_move(steps, 2, 10, 2, 10);
   EXPECT_EQ(0, planner.get_current_entry_speed_sqr());
   EXPECT_EQ(4, planner.get_current_exit_speed_sqr());
   planner.next_move();
   EXPECT_EQ(4, planner.get_current_entry_speed_sqr());  
   planner.next_move();
-  EXPECT_EQ(9, planner.get_current_entry_speed_sqr());
+  EXPECT_EQ(6, planner.get_current_entry_speed_sqr());
   planner.next_move();
-  EXPECT_EQ(5, planner.get_current_entry_speed_sqr());
+  EXPECT_EQ(8, planner.get_current_entry_speed_sqr());
 }
 
 
@@ -44,17 +44,17 @@ TEST(Planner, PlanNominalLimited) {
   Planner planner(16,1);
   std::vector<int> steps(1);
 
-  planner.plan_move(steps, 0,0,0, 9, 9, 0);
-  planner.plan_move(steps, 0,0,0, 9, 3, 9);
-  planner.plan_move(steps, 0,0,0, 9, 7, 9);
-  planner.plan_move(steps, 0,0,0, 9, 9, 9);
+  planner.plan_move(steps, 1, 5, 10, 100);
+  planner.plan_move(steps, 1, 3, 10, 100);
+  planner.plan_move(steps, 1, 2, 10, 100);
+  planner.plan_move(steps, 1, 4, 10, 100);
   EXPECT_EQ(0, planner.get_current_entry_speed_sqr());
   planner.next_move();
-  EXPECT_EQ(3, planner.get_current_entry_speed_sqr());
+  EXPECT_EQ(9, planner.get_current_entry_speed_sqr());
   planner.next_move();
-  EXPECT_EQ(3, planner.get_current_entry_speed_sqr());
+  EXPECT_EQ(4, planner.get_current_entry_speed_sqr());
   planner.next_move();
-  EXPECT_EQ(7, planner.get_current_entry_speed_sqr());
+  EXPECT_EQ(4, planner.get_current_entry_speed_sqr());
 }
 
 
@@ -62,12 +62,13 @@ TEST(Planner, PlanInitialLimited) {
   Planner planner(16, 1);
   std::vector<int> steps(1);
 
-  planner.plan_move(steps, 0,0,0, 5, 9, 9);
-  planner.plan_move(steps, 0,0,0, 5, 9, 3);
-  planner.plan_move(steps, 0,0,0, 5, 9, 4);
+  planner.plan_move(steps, 1, 10, 10, 0);
+  planner.plan_move(steps, 1, 10, 10, 2);
+  planner.plan_move(steps, 1, 10, 10, 1);
   EXPECT_EQ(0, planner.get_current_entry_speed_sqr());
   planner.next_move();
-  EXPECT_EQ(3, planner.get_current_entry_speed_sqr());
-  planner.next_move();
   EXPECT_EQ(4, planner.get_current_entry_speed_sqr());
+  planner.next_move();
+  EXPECT_EQ(1, planner.get_current_entry_speed_sqr());
 }
+

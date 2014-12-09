@@ -58,16 +58,18 @@ class DeltaGantry : public Gantry {
   // Returns max of cartesian vector distance and length of extruder moves
   float get_move_length() const;
 
-  /// Return speed limited by each axis
-  float limit_speed(float requested_speed,
-		    const std::vector<int>& steps) const;
+  /// Return min time limited by each axis and steps for current move
+  float min_time(const std::vector<int>& steps) const;
 
-  /// Return acceleration limited by each axis
-  float limit_acc(float requested_acc,
-		  const std::vector<int>& steps) const;
+  /// Return min time2 limited by each axis and steps for current move
+  float min_time2(const std::vector<int>& steps) const;
 
-  /// Return speed limited by cartesian jerk calculation
-  float limit_jerk(float acc) const;
+  /// Return max entry speed.
+  /** Calculated by centripetal acceleration assuming
+      moves are joined by circular path deviating junction_deviation from
+      corner.
+  */
+  float max_entry_speed(float acc) const;
 
   /// Delta towers controlling the gantry position
   std::vector<Tower> towers;

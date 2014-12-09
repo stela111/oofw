@@ -4,7 +4,7 @@
 /// Info about a move
 struct Move {
   std::vector<int> steps;
-  unsigned events;
+  float length;
   float speed;
   float acceleration;
 };
