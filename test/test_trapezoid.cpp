@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <src/trapezoid_ticker.h>
+#include <src/planner.h>
 #include <src/stepper.h>
 #include <fake/timer.h>
 #include <fake/pin_io.h>
@@ -34,29 +35,14 @@ protected:
 
 TEST_F(TrapezoidTest, simple) {
   TrapezoidTicker ticker(stepperPtrs, &timer);
+  Planner planner(16,steppers.size());
 
   std::vector<int> steps{1,2,-3,10};
-  float length = 1;
-  float cruise_speed = 10;
-  float entry_speed = 1;
-  float exit_speed = 5;
-  float acceleration = 100;
+  std::vector<int> steps2{-2,-3,2,-9};
 
-  float rate = 3e2;
-  unsigned events = static_cast<int>(length*rate/cruise_speed);
-  float factor = events/length;
-
-  for (unsigned ind = 0; ind < steps.size(); ind++) {
-    steppers[ind].set_direction(steps[ind]>0);
-    //    steps[ind] = std::abs(steps[ind]);
-  }
-  
-  ticker.generate(steps,
-		  events,
-		  entry_speed*factor,
-		  exit_speed*factor,
-		  cruise_speed*factor,
-		  acceleration*factor);
+  planner.plan_move(steps, 1, 10, 100, 1);
+  planner.plan_move(steps2, 1, 20, 100, 1);
+  ticker.start(&planner);
 
   std::uint32_t delay = 0;
   std::uint32_t time = 0;
@@ -67,11 +53,11 @@ TEST_F(TrapezoidTest, simple) {
       std::cout << steppers[ind].position();
     }
     time += delay;
-    std::cout << std::endl << time << ": ";
+    std::cout << std::endl << delay << ": ";
   }
   std::cout << std::endl;
 
   for (unsigned ind = 0; ind < steps.size(); ind++) {
-    EXPECT_EQ(steps[ind], steppers[ind].position());
+    EXPECT_EQ(steps[ind]+steps2[ind], steppers[ind].position());
   }
 }

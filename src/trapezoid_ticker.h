@@ -7,28 +7,31 @@
 #include "trapezoid_generator.h"
 
 class Stepper;
+class Planner;
 
+/// Generate steps following trapezoid profile.
+/**
+   This class uses a Timer to generate a time base with a trapezoid shaped
+   frequency, and uses this to generate step pulses to stepper motors. The
+   trapzeoid and step pulses are supplied by a MoveProvider.
+ */
 class TrapezoidTicker : public TimerCallback {
  public:
   TrapezoidTicker(const std::vector<Stepper*>& steppers, Timer *timer);
 
-  /// Generate steps following trapezoid profile.
-  /** Note: Trapezoid may be degenerate such that cruise speed is never
-      reached. But it must be possible to reach final speed within count
-      given initial speed and acceleration.
+  /// Start generating steps until no more moves are available.
+  /** Moves are repeatedly pulled from the move_provider.
+      @note The calls to move_provider are executed from interrupt context
   */
-  void generate(const std::vector<int> &steps,
-		unsigned events,
-		float entryRate,
-		float exitRate,
-		float cruiseRate,
-		float acc);
+  void start(Planner *move_provider);
 
  private:
+  void setup_next_move();
   std::uint32_t on_timer();
   Timer *timer;
   std::vector<Stepper*> steppers;
   std::vector<Bresenham> bresenhams;
+  Planner *move_provider;
   TrapezoidGenerator trapezoid;
   bool unstep;
   std::uint32_t step_duration;

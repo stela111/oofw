@@ -13,6 +13,10 @@ namespace fake {
     
     void stop() {
     }
+
+    float frequency() const {
+      return 1e6f;
+    }
   
     std::uint32_t fake_next() {
       if (callback) {
